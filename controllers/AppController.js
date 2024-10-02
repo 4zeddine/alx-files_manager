@@ -1,11 +1,6 @@
 // eslint-disable-next-line no-unused-vars
 import { Express } from 'express';
 import AppController from './AppController';
-import AuthController from '../controllers/AuthController';
-import UsersController from '../controllers/UsersController';
-import FilesController from '../controllers/FilesController';
-import { basicAuthenticate, xTokenAuthenticate } from '../middlewares/auth';
-import { APIError, errorResponse } from '../middlewares/error';
 
 /**
  * Integrates routes along with their corresponding handlers
