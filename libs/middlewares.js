@@ -1,7 +1,7 @@
 import express from 'express';
 
 /**
- * Adds middlewares to the given express application.
+ * Handles adding middlewares to the express application.
  * @param {express.Express} api The express application.
  */
 const injectMiddlewares = (api) => {

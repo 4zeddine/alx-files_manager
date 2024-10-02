@@ -32,9 +32,9 @@ const isValidId = (id) => {
   const size = 24;
   let i = 0;
   const charRanges = [
-    [48, 57], // 0 - 9
-    [97, 102], // a - f
-    [65, 70], // A - F
+    [48, 57],
+    [97, 102],
+    [65, 70],
   ];
   if (typeof id !== 'string' || id.length !== size) {
     return false;
@@ -53,7 +53,7 @@ const isValidId = (id) => {
 
 export default class FilesController {
   /**
-   * Uploads a file.
+   * handles file upload.
    * @param {Request} req The Express request object.
    * @param {Response} res The Express response object.
    */
@@ -96,8 +96,6 @@ export default class FilesController {
     const baseDir = `${process.env.FOLDER_PATH || ''}`.trim().length > 0
       ? process.env.FOLDER_PATH.trim()
       : joinPath(tmpdir(), DEFAULT_ROOT_FOLDER);
-    // default baseDir == '/tmp/files_manager'
-    // or (on Windows) '%USERPROFILE%/AppData/Local/Temp/files_manager';
     const newFile = {
       userId: new mongoDBCore.BSON.ObjectId(userId),
       name,
@@ -116,7 +114,6 @@ export default class FilesController {
     const insertionInfo = await (await dbClient.filesCollection())
       .insertOne(newFile);
     const fileId = insertionInfo.insertedId.toString();
-    // start thumbnail generation worker
     if (type === VALID_FILE_TYPES.image) {
       const jobName = `Image thumbnail [${userId}-${fileId}]`;
       fileQueue.add({ userId, fileId, name: jobName });
@@ -160,7 +157,7 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves files associated with a specific user.
+   * Gets the  associated files with user.
    * @param {Request} req The Express request object.
    * @param {Response} res The Express response object.
    */
@@ -259,7 +256,7 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves the content of a file.
+   * Gets a file content.
    * @param {Request} req The Express request object.
    * @param {Response} res The Express response object.
    */

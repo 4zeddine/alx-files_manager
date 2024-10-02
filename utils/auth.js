@@ -7,7 +7,7 @@ import dbClient from './db';
 import redisClient from './redis';
 
 /**
- * Fetches the user from the Authorization header in the given request object.
+ * Gets user from the Authorization header in a request object.
  * @param {Request} req The Express request object.
  * @returns {Promise<{_id: ObjectId, email: string, password: string}>}
  */
@@ -35,7 +35,7 @@ export const getUserFromAuthorization = async (req) => {
 };
 
 /**
- * Fetches the user from the X-Token header in the given request object.
+ * Gets the user from the X-Token header in a request object.
  * @param {Request} req The Express request object.
  * @returns {Promise<{_id: ObjectId, email: string, password: string}>}
  */

@@ -13,7 +13,7 @@ export class APIError extends Error {
 }
 
 /**
- * Applies Basic authentication to a route.
+ * Handles Basic authentication to a route.
  * @param {Error} err The error object.
  * @param {Request} req The Express request object.
  * @param {Response} res The Express response object.
