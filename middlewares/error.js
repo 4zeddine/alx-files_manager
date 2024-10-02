@@ -2,32 +2,31 @@
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * Represents an error within the API.
+ * Represents an error in this API.
  */
-export class CustomAPIError extends Error {
-  constructor(statusCode, errorMessage) {
+export class APIError extends Error {
+  constructor(code, message) {
     super();
-    this.statusCode = statusCode || 500;
-    this.errorMessage = errorMessage;
+    this.code = code || 500;
+    this.message = message;
   }
 }
 
 /**
- * Handles error responses for the API.
- * @param {Error} error The error object.
- * @param {Request} request The Express request object.
- * @param {Response} response The Express response object.
- * @param {NextFunction} nextFunction The Express next function.
+ * Applies Basic authentication to a route.
+ * @param {Error} err The error object.
+ * @param {Request} req The Express request object.
+ * @param {Response} res The Express response object.
+ * @param {NextFunction} next The Express next function.
  */
-export const handleErrorResponse = (error, request, response, nextFunction) => {
-  const fallbackMessage = `Unable to process ${request.url}`;
+export const errorResponse = (err, req, res, next) => {
+  const defaultMsg = `Failed to process ${req.url}`;
 
-  if (error instanceof CustomAPIError) {
-    response.status(error.statusCode).json({ error: error.errorMessage || fallbackMessage });
+  if (err instanceof APIError) {
+    res.status(err.code).json({ error: err.message || defaultMsg });
     return;
   }
-
-  response.status(500).json({
-    error: error ? error.message || error.toString() : fallbackMessage,
+  res.status(500).json({
+    error: err ? err.message || err.toString() : defaultMsg,
   });
 };
