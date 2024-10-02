@@ -4,25 +4,25 @@ import Collection from 'mongodb/lib/collection';
 import envLoader from './env_loader';
 
 /**
- * Represents a client for MongoDB database.
+ * Represents a MongoDB client.
  */
-class DatabaseClient {
+class DBClient {
   /**
-   * Initializes a new instance of DatabaseClient.
+   * Creates a new DBClient instance.
    */
   constructor() {
     envLoader();
-    const dbHost = process.env.DB_HOST || 'localhost';
-    const dbPort = process.env.DB_PORT || 27017;
-    const dbName = process.env.DB_DATABASE || 'files_manager';
-    const connectionString = `mongodb://${dbHost}:${dbPort}/${dbName}`;
+    const host = process.env.DB_HOST || 'localhost';
+    const port = process.env.DB_PORT || 27017;
+    const database = process.env.DB_DATABASE || 'files_manager';
+    const dbURL = `mongodb://${host}:${port}/${database}`;
 
-    this.client = new mongodb.MongoClient(connectionString, { useUnifiedTopology: true });
+    this.client = new mongodb.MongoClient(dbURL, { useUnifiedTopology: true });
     this.client.connect();
   }
 
   /**
-   * Checks if the connection to the MongoDB server is active.
+   * Checks if this client's connection to the MongoDB server is active.
    * @returns {boolean}
    */
   isAlive() {
@@ -30,7 +30,7 @@ class DatabaseClient {
   }
 
   /**
-   * Counts the number of users in the database.
+   * Retrieves the number of users in the database.
    * @returns {Promise<Number>}
    */
   async nbUsers() {
@@ -38,7 +38,7 @@ class DatabaseClient {
   }
 
   /**
-   * Counts the number of files in the database.
+   * Retrieves the number of files in the database.
    * @returns {Promise<Number>}
    */
   async nbFiles() {
@@ -62,5 +62,5 @@ class DatabaseClient {
   }
 }
 
-export const dbClient = new DatabaseClient();
+export const dbClient = new DBClient();
 export default dbClient;
