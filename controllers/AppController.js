@@ -1,38 +1,19 @@
-// eslint-disable-next-line no-unused-vars
-import { Express } from 'express';
-import AppController from './AppController';
-import AuthController from '../controllers/AuthController';
-import UsersController from '../controllers/UsersController';
-import FilesController from '../controllers/FilesController';
-import { basicAuthenticate, xTokenAuthenticate } from '../middlewares/auth';
-import { APIError, errorResponse } from '../middlewares/error';
+/* eslint-disable import/no-named-as-default */
+import redisClient from '../utils/redis';
+import dbClient from '../utils/db';
 
-/**
- * Integrates routes along with their corresponding handlers
- * into the specified Express application.
- * @param {Express} api
- */
-const injectRoutes = (api) => {
-  api.get('/status', AppController.getStatus);
-  api.get('/stats', AppController.getStats);
+export default class AppController {
+  static getStatus(req, res) {
+    res.status(200).json({
+      redis: redisClient.isAlive(),
+      db: dbClient.isAlive(),
+    });
+  }
 
-  api.get('/connect', basicAuthenticate, AuthController.getConnect);
-  api.get('/disconnect', xTokenAuthenticate, AuthController.getDisconnect);
-
-  api.post('/users', UsersController.postNew);
-  api.get('/users/me', xTokenAuthenticate, UsersController.getMe);
-
-  api.post('/files', xTokenAuthenticate, FilesController.postUpload);
-  api.get('/files/:id', xTokenAuthenticate, FilesController.getShow);
-  api.get('/files', xTokenAuthenticate, FilesController.getIndex);
-  api.put('/files/:id/publish', xTokenAuthenticate, FilesController.putPublish);
-  api.put('/files/:id/unpublish', xTokenAuthenticate, FilesController.putUnpublish);
-  api.get('/files/:id/data', FilesController.getFile);
-
-  api.all('*', (req, res, next) => {
-    errorResponse(new APIError(404, `Cannot ${req.method} ${req.url}`), req, res, next);
-  });
-  api.use(errorResponse);
-};
-
-export default injectRoutes;
+  static getStats(req, res) {
+    Promise.all([dbClient.nbUsers(), dbClient.nbFiles()])
+      .then(([usersCount, filesCount]) => {
+        res.status(200).json({ users: usersCount, files: filesCount });
+      });
+  }
+}
