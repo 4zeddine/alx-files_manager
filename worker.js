@@ -1,90 +1,43 @@
-/* eslint-disable import/no-named-as-default */
-import { writeFile } from 'fs';
-import { promisify } from 'util';
-import Queue from 'bull/lib/queue';
-import imgThumbnail from 'image-thumbnail';
-import mongoDBCore from 'mongodb/lib/core';
-import databaseClient from './utils/db';
-import Mailer from './utils/mailer';
+import Queue from 'bull';
+import imageThumb from 'image-thumbnail';
+import { ObjectId } from 'mongodb';
+import fs from 'fs';
+import dbClient from './utils/db';
 
-const writeFileAsync = promisify(writeFile);
-const thumbnailQueue = new Queue('thumbnail generation');
-const emailQueue = new Queue('email sending');
+const fileQueue = new Queue('fileQueue');
+const userQueue = new Queue('userQueue');
 
-/**
- * Creates a thumbnail image with the specified width.
- * @param {String} originalFilePath The path of the original image file.
- * @param {number} thumbnailWidth The desired width of the thumbnail.
- * @returns {Promise<void>}
- */
-const createThumbnail = async (originalFilePath, thumbnailWidth) => {
-  const buffer = await imgThumbnail(originalFilePath, { width: thumbnailWidth });
-  console.log(`Creating thumbnail for file: ${originalFilePath}, width: ${thumbnailWidth}`);
-  return writeFileAsync(`${originalFilePath}_${thumbnailWidth}`, buffer);
-};
-
-thumbnailQueue.process(async (job, done) => {
-  const fileId = job.data.fileId || null;
-  const userId = job.data.userId || null;
-
-  if (!fileId) {
-    throw new Error('fileId is required');
-  }
-  if (!userId) {
-    throw new Error('userId is required');
-  }
-  console.log('Processing job for', job.data.name || '');
-
-  const fileRecord = await (await databaseClient.filesCollection())
-    .findOne({
-      _id: new mongoDBCore.BSON.ObjectId(fileId),
-      userId: new mongoDBCore.BSON.ObjectId(userId),
-    });
-
-  if (!fileRecord) {
-    throw new Error('File not found');
-  }
-
-  const thumbnailSizes = [500, 250, 100];
-
-  Promise.all(thumbnailSizes.map((size) => createThumbnail(fileRecord.localPath, size)))
-    .then(() => {
-      done();
-    });
-});
-
-emailQueue.process(async (job, done) => {
-  const userId = job.data.userId || null;
-
-  if (!userId) {
-    throw new Error('userId is required');
-  }
-
-  const userRecord = await (await databaseClient.usersCollection())
-    .findOne({ _id: new mongoDBCore.BSON.ObjectId(userId) });
-
-  if (!userRecord) {
-    throw new Error('User not found');
-  }
-
-  console.log(`Welcome ${userRecord.email}!`);
-
+fileQueue.process(async (job) => {
   try {
-    const emailSubject = 'Welcome to ALX-Files_Manager by B3zaleel';
-    const emailBody = [
-      '<div>',
-      '<h3>Hello {{user.name}},</h3>',
-      'Welcome to <a href="https://github.com/B3zaleel/alx-files_manager">',
-      'ALX-Files_Manager</a>, ',
-      'a simple file management API built with Node.js by ',
-      '<a href="https://github.com/B3zaleel">Bezaleel Olakunori</a>. ',
-      'We hope it meets your needs.',
-      '</div>',
-    ].join('');
+    const { fileId, userId } = job.data;
+    if (!fileId) throw new Error('Missing fileId');
+    if (!userId) throw new Error('Missing userId');
 
-    Mailer.sendMail(Mailer.buildMessage(userRecord.email, emailSubject, emailBody));
-    done();
+    const file = await dbClient.dbClient.collection('files').findOne({ _id: ObjectId(fileId), userId: ObjectId(userId) });
+    if (!file) throw new Error('File not found');
+    const path = file.localPath;
+    fs.writeFileSync(`${path}_500`, await imageThumb(path, { width: 500 }));
+
+    fs.writeFileSync(`${path}_250`, await imageThumb(path, { width: 250 }));
+
+    fs.writeFileSync(`${path}_100`, await imageThumb(path, { width: 100 }));
   } catch (error) {
-    done(error);
+    console.error('An error occurred:', error);
   }
 });
+
+userQueue.process(async (job) => {
+  try {
+    const { userId } = job.data;
+    if (!userId) throw new Error('Missing userId');
+    // userId already objectid
+    const user = await dbClient.dbClient.collection('users').findOne({ _id: ObjectId(userId) });
+    if (!user) throw new Error('User not found');
+
+    console.log(`Welcome ${user.email}!`);
+  } catch (error) {
+    console.error('An error occurred:', error);
+  }
+});
+
+export { fileQueue, userQueue };
